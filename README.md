@@ -1,4 +1,4 @@
-# MACMush
+# MACMush - WIP
 
 A modern MUD/MUSH client for macOS built with Tauri 2.x, Rust, and JavaScript.
 
