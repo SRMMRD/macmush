@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MACMush</title>
+    <script type="module" src="/main.js" defer></script>
+  </head>
+
+  <body>
+    <div class="app-container">
+      <!-- Header with connection status -->
+      <header class="app-header">
+        <h1>🎮 MACMush</h1>
+        <div class="connection-status">
+          <span id="status-indicator" class="status-dot disconnected"></span>
+          <span id="status-text">Disconnected</span>
+        </div>
+      </header>
+
+      <!-- Connection dialog (shown when disconnected) -->
+      <div id="connection-dialog" class="connection-dialog">
+        <div class="dialog-content">
+          <h2>Connect to MUD</h2>
+
+          <!-- Saved Worlds Section -->
+          <div id="saved-worlds-section" class="saved-worlds-section">
+            <div class="section-header">
+              <label>📚 Saved Worlds</label>
+            </div>
+            <div id="saved-worlds-list" class="saved-worlds-list">
+              <p class="empty-state">No saved worlds yet</p>
+            </div>
+          </div>
+
+          <!-- Recent Connections Section -->
+          <div id="recent-connections-section" class="recent-connections-section">
+            <div class="section-header">
+              <label>🕒 Recent Connections</label>
+              <button id="clear-recent-btn" class="btn-icon clear-recent" title="Clear History">🗑️</button>
+            </div>
+            <div id="recent-connections-list" class="recent-connections-list">
+              <p class="empty-state">No recent connections</p>
+            </div>
+          </div>
+
+          <div class="divider">or connect manually</div>
+
+          <form id="connect-form">
+            <div class="form-group">
+              <label for="world-name">World Name</label>
+              <input
+                id="world-name"
+                type="text"
+                placeholder="My MUD World"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="host">Host</label>
+              <input
+                id="host"
+                type="text"
+                placeholder="mud.example.com"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="port">Port</label>
+              <input
+                id="port"
+                type="number"
+                placeholder="4000"
+                min="1"
+                max="65535"
+                value="4000"
+                required
+              />
+            </div>
+
+            <!-- Advanced Settings -->
+            <details class="advanced-settings">
+              <summary>⚙️ Advanced Settings</summary>
+              <div class="settings-content">
+                <div class="form-group">
+                  <label for="timeout">Connection Timeout (seconds)</label>
+                  <input
+                    id="timeout"
+                    type="number"
+                    placeholder="30"
+                    min="5"
+                    max="300"
+                    value="30"
+                  />
+                  <small class="form-hint">Time to wait for connection (5-300 seconds)</small>
+                </div>
+
+                <div class="form-group checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="use-tls" />
+                    <span>🔒 Use TLS/SSL (secure connection)</span>
+                  </label>
+                  <small class="form-hint">Encrypt connection with TLS for security</small>
+                </div>
+
+                <div class="form-group checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="auto-reconnect" />
+                    <span>Auto-reconnect on disconnect</span>
+                  </label>
+                  <small class="form-hint">Automatically reconnect if connection is lost</small>
+                </div>
+
+                <div class="form-group checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="keep-alive" checked />
+                    <span>Send keep-alive pings</span>
+                  </label>
+                  <small class="form-hint">Prevent connection timeout from server</small>
+                </div>
+              </div>
+            </details>
+
+            <div class="form-actions">
+              <button type="button" id="import-world-btn" class="btn">📥 Import World</button>
+              <button type="button" id="export-world-btn" class="btn">📤 Export World</button>
+              <button type="button" id="save-world-btn" class="btn">💾 Save Profile</button>
+              <button type="submit" class="btn btn-primary">Connect</button>
+            </div>
+            <p id="connect-error" class="error-message"></p>
+          </form>
+        </div>
+      </div>
+
+      <!-- Main client interface (shown when connected) -->
+      <main id="client-interface" class="client-interface" style="display: none;">
+        <!-- Sidebar with tabs -->
+        <aside class="sidebar-panel">
+          <!-- Tab buttons -->
+          <div class="sidebar-tabs">
+            <button id="worlds-tab" class="tab-btn active" data-tab="worlds">🌍 Worlds</button>
+            <button id="triggers-tab" class="tab-btn" data-tab="triggers">⚡ Triggers</button>
+            <button id="aliases-tab" class="tab-btn" data-tab="aliases">⚡ Aliases</button>
+            <button id="macros-tab" class="tab-btn" data-tab="macros">⌨️ Macros</button>
+            <button id="highlights-tab" class="tab-btn" data-tab="highlights">🎨 Highlights</button>
+            <button id="scripts-tab" class="tab-btn" data-tab="scripts">⚙️ Scripts</button>
+            <button id="timers-tab" class="tab-btn" data-tab="timers">⏰ Timers</button>
+          </div>
+
+          <!-- Worlds panel content -->
+          <div id="worlds-content" class="tab-content active">
+            <div class="panel-header">
+              <button id="add-world-btn" class="btn btn-icon" title="Add World">+</button>
+            </div>
+            <div id="world-list" class="world-list">
+              <p class="empty-state">No worlds yet</p>
+            </div>
+          </div>
+
+          <!-- Trigger panel content -->
+          <div id="triggers-content" class="tab-content">
+            <div class="panel-header">
+              <button id="add-trigger-btn" class="btn btn-icon" title="Add Trigger">+</button>
+            </div>
+            <div id="trigger-list" class="trigger-list">
+              <p class="empty-state">No triggers yet</p>
+            </div>
+          </div>
+
+          <!-- Alias panel content -->
+          <div id="aliases-content" class="tab-content">
+            <div class="panel-header">
+              <button id="add-alias-btn" class="btn btn-icon" title="Add Alias">+</button>
+            </div>
+            <div id="alias-list" class="alias-list">
+              <p class="empty-state">No aliases yet</p>
+            </div>
+          </div>
+
+          <!-- Macro panel content -->
+          <div id="macros-content" class="tab-content">
+            <div class="panel-header">
+              <button id="add-macro-btn" class="btn btn-icon" title="Add Macro">+</button>
+            </div>
+            <div id="macro-list" class="macro-list">
+              <p class="empty-state">No macros yet</p>
+            </div>
+          </div>
+
+          <!-- Highlight panel content -->
+          <div id="highlights-content" class="tab-content">
+            <div class="panel-header">
+              <button id="add-highlight-btn" class="btn btn-icon" title="Add Highlight">+</button>
+            </div>
+            <div id="highlight-list" class="highlight-list">
+              <p class="empty-state">No highlights yet</p>
+            </div>
+
+            <!-- Variables panel (shows captured variables) -->
+            <div id="variables-panel" class="variables-panel">
+              <div class="panel-header-small">
+                <span>📊 Variables</span>
+              </div>
+              <div id="variables-list" class="variables-list">
+                <p class="empty-state">No variables captured</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Script panel content -->
+          <div id="scripts-content" class="tab-content">
+            <div class="panel-header">
+              <button id="add-script-btn" class="btn btn-icon" title="Add Script">+</button>
+            </div>
+            <div id="script-list" class="script-list">
+              <p class="empty-state">No scripts yet</p>
+            </div>
+          </div>
+
+          <!-- Timer panel content -->
+          <div id="timers-content" class="tab-content">
+            <div class="panel-header">
+              <button id="add-timer-btn" class="btn btn-icon" title="Add Timer">+</button>
+            </div>
+            <div id="timer-list" class="timer-list">
+              <p class="empty-state">No timers yet</p>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main content area -->
+        <div class="main-content">
+          <!-- Output display area -->
+          <div class="output-container">
+            <!-- World tabs -->
+            <div class="world-tabs" id="world-tabs">
+              <div class="world-tab-list" id="world-tab-list">
+                <!-- Tabs will be dynamically inserted here -->
+              </div>
+              <button id="new-world-btn" class="btn-icon world-tab-new" title="New World">+</button>
+            </div>
+
+            <!-- Output toolbar -->
+            <div class="output-toolbar">
+              <div class="toolbar-left">
+                <button id="clear-output-btn" class="btn-icon" title="Clear Output">🗑️</button>
+                <button id="toggle-logging-btn" class="btn-icon" title="Start Logging">📝</button>
+                <button id="open-logs-btn" class="btn-icon" title="Open Logs Folder" style="display: none;">📂</button>
+                <div class="search-container">
+                  <input
+                    id="search-output"
+                    type="text"
+                    placeholder="Search output..."
+                    class="search-input"
+                  />
+                  <button id="search-prev-btn" class="btn-icon" title="Previous Match">▲</button>
+                  <button id="search-next-btn" class="btn-icon" title="Next Match">▼</button>
+                  <button id="clear-search-btn" class="btn-icon" title="Clear Search">✕</button>
+                </div>
+              </div>
+              <div class="toolbar-right">
+                <div class="filter-toggles">
+                  <label class="filter-toggle" title="Show/hide MUD messages">
+                    <input type="checkbox" id="filter-mud" checked />
+                    <span>MUD</span>
+                  </label>
+                  <label class="filter-toggle" title="Show/hide system messages">
+                    <input type="checkbox" id="filter-system" checked />
+                    <span>System</span>
+                  </label>
+                  <label class="filter-toggle" title="Show/hide commands">
+                    <input type="checkbox" id="filter-command" checked />
+                    <span>Commands</span>
+                  </label>
+                  <label class="filter-toggle" title="Show/hide errors">
+                    <input type="checkbox" id="filter-error" checked />
+                    <span>Errors</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div id="output" class="output-display"></div>
+            <button id="scroll-to-bottom-btn" class="scroll-to-bottom" style="display: none;" title="Scroll to bottom">
+              ↓
+            </button>
+          </div>
+
+          <!-- Status Bar -->
+          <div id="status-bar" class="status-bar" style="display: none;">
+            <div class="status-section status-connection">
+              <span class="status-label">⏱️</span>
+              <span id="status-uptime" class="status-value">00:00:00</span>
+            </div>
+
+            <div class="status-section status-traffic">
+              <span class="status-label">⬆️</span>
+              <span id="status-bytes-sent" class="status-value">0 KB</span>
+              <span class="status-label">⬇️</span>
+              <span id="status-bytes-received" class="status-value">0 KB</span>
+            </div>
+
+            <div id="status-variables" class="status-section status-variables">
+              <!-- Dynamic variable display -->
+            </div>
+          </div>
+
+          <!-- Command input area -->
+          <div class="input-container">
+            <form id="command-form" class="command-form">
+              <input
+                id="command-input"
+                type="text"
+                placeholder="Enter command..."
+                autocomplete="off"
+              />
+              <button type="submit" class="btn btn-send">Send</button>
+              <button type="button" id="disconnect-btn" class="btn btn-disconnect">
+                Disconnect
+              </button>
+            </form>
+          </div>
+        </div>
+      </main>
+
+      <!-- Add Trigger Modal -->
+      <div id="trigger-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Create Trigger</h2>
+            <button id="close-modal-btn" class="btn btn-icon">&times;</button>
+          </div>
+          <form id="trigger-form">
+            <div class="form-group">
+              <label for="trigger-name">Trigger Name</label>
+              <input
+                id="trigger-name"
+                type="text"
+                placeholder="e.g., Health Warning"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="trigger-pattern">Pattern (regex)</label>
+              <input
+                id="trigger-pattern"
+                type="text"
+                placeholder="e.g., ^HP: ([0-9]+)/([0-9]+)"
+                required
+              />
+              <small class="form-hint">Use ^ for start of line, $ for end</small>
+            </div>
+
+            <div class="form-group">
+              <label for="trigger-command">Command to Send</label>
+              <input
+                id="trigger-command"
+                type="text"
+                placeholder="e.g., heal"
+              />
+              <small class="form-hint">Leave empty if using Lua script below</small>
+            </div>
+
+            <div class="form-group">
+              <label for="trigger-script">Lua Script (optional)</label>
+              <textarea
+                id="trigger-script"
+                rows="10"
+                placeholder="-- Lua script executed when trigger fires
+-- Available API:
+-- world.Send(command)           -- Send command to MUD
+-- world.Note(message)            -- Display message to user
+-- world.GetVariable(name)        -- Get variable value
+-- world.SetVariable(name, value) -- Set variable value
+-- world.GetInfo(type)            -- Get world information
+-- Captures: %0 = full match, %1 = first group, %2 = second group, etc.
+
+-- Example: Auto-heal when HP drops below 30%
+-- local hp_current = world.GetVariable('1')  -- %1 capture
+-- local hp_max = world.GetVariable('2')      -- %2 capture
+-- if tonumber(hp_current) < tonumber(hp_max) * 0.3 then
+--   world.Send('quaff healing potion')
+--   world.Note('🍹 Auto-healed!')
+-- end"
+                style="font-family: 'Courier New', monospace; font-size: 13px;"
+              ></textarea>
+              <small class="form-hint">Lua script has access to capture groups as variables</small>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-trigger-btn" class="btn">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Trigger</button>
+            </div>
+            <p id="trigger-error" class="error-message"></p>
+          </form>
+        </div>
+      </div>
+
+      <!-- Test Trigger Modal -->
+      <div id="test-trigger-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Test Trigger</h2>
+            <button id="close-test-modal-btn" class="btn btn-icon">&times;</button>
+          </div>
+          <form id="test-trigger-form">
+            <div class="form-group">
+              <label for="test-trigger-name-display">Trigger</label>
+              <input
+                id="test-trigger-name-display"
+                type="text"
+                readonly
+                disabled
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="test-trigger-pattern-display">Pattern</label>
+              <input
+                id="test-trigger-pattern-display"
+                type="text"
+                readonly
+                disabled
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="test-input-text">Test Input Text</label>
+              <input
+                id="test-input-text"
+                type="text"
+                placeholder="Enter text to test against pattern..."
+                required
+              />
+              <small class="form-hint">Enter text to see if this trigger matches</small>
+            </div>
+
+            <div id="test-result" class="test-result"></div>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-test-btn" class="btn">Close</button>
+              <button type="submit" class="btn btn-primary">Test Pattern</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Add Alias Modal -->
+      <div id="alias-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Create Alias</h2>
+            <button id="close-alias-modal-btn" class="btn btn-icon">&times;</button>
+          </div>
+          <form id="alias-form">
+            <div class="form-group">
+              <label for="alias-name">Alias Name</label>
+              <input
+                id="alias-name"
+                type="text"
+                placeholder="e.g., Go North Shortcut"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="alias-pattern">Pattern (regex)</label>
+              <input
+                id="alias-pattern"
+                type="text"
+                placeholder="e.g., ^gn$ or ^kill (.+)$"
+                required
+              />
+              <small class="form-hint">Use ^ for start, $ for end, (.+) for parameters</small>
+            </div>
+
+            <div class="form-group">
+              <label for="alias-replacement">Replacement Command</label>
+              <input
+                id="alias-replacement"
+                type="text"
+                placeholder="e.g., go north or kill $1"
+              />
+              <small class="form-hint">Use $1, $2, etc. for captured parameters. Leave empty if using Lua script below.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="alias-script">Lua Script (optional)</label>
+              <textarea
+                id="alias-script"
+                rows="10"
+                placeholder="-- Lua script executed when alias is triggered
+-- Available API:
+-- world.Send(command)           -- Send command to MUD
+-- world.Note(message)            -- Display message to user
+-- world.GetVariable(name)        -- Get variable value
+-- world.SetVariable(name, value) -- Set variable value
+-- Captures: %1 = first parameter, %2 = second parameter, etc.
+
+-- Example: Multi-command alias with logic
+-- local target = world.GetVariable('1')  -- $1 from alias pattern
+-- if target then
+--   world.Send('cast identify ' .. target)
+--   world.Send('consider ' .. target)
+--   world.Note('Analyzing: ' .. target)
+-- else
+--   world.Note('No target specified!')
+-- end"
+                style="font-family: 'Courier New', monospace; font-size: 13px;"
+              ></textarea>
+              <small class="form-hint">Lua script has access to capture groups as variables</small>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-alias-btn" class="btn">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Alias</button>
+            </div>
+            <p id="alias-error" class="error-message"></p>
+          </form>
+        </div>
+      </div>
+
+      <!-- Test Alias Modal -->
+      <div id="test-alias-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Test Alias</h2>
+            <button id="close-test-alias-modal-btn" class="btn btn-icon">&times;</button>
+          </div>
+          <form id="test-alias-form">
+            <div class="form-group">
+              <label for="test-alias-name-display">Alias</label>
+              <input
+                id="test-alias-name-display"
+                type="text"
+                readonly
+                disabled
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="test-alias-pattern-display">Pattern</label>
+              <input
+                id="test-alias-pattern-display"
+                type="text"
+                readonly
+                disabled
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="test-alias-input">Test Input Command</label>
+              <input
+                id="test-alias-input"
+                type="text"
+                placeholder="Enter command to test..."
+                required
+              />
+              <small class="form-hint">Enter a command to see if this alias matches</small>
+            </div>
+
+            <div id="test-alias-result" class="test-result"></div>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-test-alias-btn" class="btn">Close</button>
+              <button type="submit" class="btn btn-primary">Test Alias</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Add Macro Modal -->
+      <div id="macro-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Create Macro</h2>
+            <button id="close-macro-modal-btn" class="btn btn-icon">&times;</button>
+          </div>
+          <form id="macro-form">
+            <div class="form-group">
+              <label for="macro-name">Macro Name</label>
+              <input
+                id="macro-name"
+                type="text"
+                placeholder="e.g., Quick Heal"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="macro-key">Key Combination</label>
+              <input
+                id="macro-key"
+                type="text"
+                placeholder="Press key combination..."
+                readonly
+                required
+              />
+              <small class="form-hint">Click the field and press your desired key combination (F1-F12, Ctrl+Key, Alt+Key)</small>
+            </div>
+
+            <div class="form-group">
+              <label for="macro-command">Command</label>
+              <input
+                id="macro-command"
+                type="text"
+                placeholder="e.g., heal or 3n or cast heal;drink potion"
+                required
+              />
+              <small class="form-hint">
+                Supports: <strong>Multi-commands</strong> (use semicolons), <strong>Speed walking</strong> (3n = north;north;north)
+              </small>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-macro-btn" class="btn">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Macro</button>
+            </div>
+            <p id="macro-error" class="error-message"></p>
+          </form>
+        </div>
+      </div>
+
+      <!-- Add Highlight Modal -->
+      <div id="highlight-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Create Highlight</h2>
+            <button id="close-highlight-modal-btn" class="btn btn-icon">&times;</button>
+          </div>
+          <form id="highlight-form">
+            <div class="form-group">
+              <label for="highlight-name">Highlight Name</label>
+              <input
+                id="highlight-name"
+                type="text"
+                placeholder="e.g., Low Health Warning"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="highlight-pattern">Pattern (regex)</label>
+              <input
+                id="highlight-pattern"
+                type="text"
+                placeholder="e.g., HP: (\d+)/(\d+)"
+                required
+              />
+              <small class="form-hint">Use capture groups () to extract variables</small>
+            </div>
+
+            <div class="form-group">
+              <label for="highlight-color">Highlight Color</label>
+              <div class="color-input-group">
+                <input
+                  id="highlight-color"
+                  type="color"
+                  value="#ffff00"
+                />
+                <input
+                  id="highlight-color-text"
+                  type="text"
+                  value="#ffff00"
+                  placeholder="#ffff00"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Text Style</label>
+              <div class="checkbox-group-inline">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="highlight-bold" />
+                  <span>Bold</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="highlight-italic" />
+                  <span>Italic</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="highlight-underline" />
+                  <span>Underline</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="highlight-variables">Variable Names (optional)</label>
+              <input
+                id="highlight-variables"
+                type="text"
+                placeholder="e.g., hp_current,hp_max"
+              />
+              <small class="form-hint">Comma-separated names for capture groups. $1 = first name, $2 = second, etc.</small>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-highlight-btn" class="btn">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Highlight</button>
+            </div>
+            <p id="highlight-error" class="error-message"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script Modal -->
+    <div id="script-modal" class="modal" style="display: none;">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h2>Create Script</h2>
+          <button id="close-script-modal-btn" class="btn btn-icon">&times;</button>
+        </div>
+        <form id="script-form">
+          <div class="form-group">
+            <label for="script-name">Script Name</label>
+            <input
+              id="script-name"
+              type="text"
+              placeholder="e.g., Auto-Healer, Combat Assistant"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="script-trigger">Trigger Pattern (optional)</label>
+            <input
+              id="script-trigger"
+              type="text"
+              placeholder="e.g., Your health is low|You need healing"
+            />
+            <small class="form-hint">Regex pattern. Leave empty for manual execution only.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="script-code">JavaScript Code</label>
+            <textarea
+              id="script-code"
+              rows="15"
+              placeholder="// Script code here
+// Available API:
+// mud.send(command)          - Send command to MUD
+// mud.output(text, type)      - Output to display
+// mud.getVariable(name)       - Get variable value
+// mud.setVariable(name, val)  - Set variable value
+// mud.wait(ms)                - Wait for milliseconds
+// mud.log(...)                - Log to console
+// mud.isConnected()           - Check connection status
+// mud.addTrigger(name, pattern, command)
+// mud.addAlias(name, pattern, replacement)
+
+// Example:
+// if (mud.getVariable('hp_current') < 50) {
+//   mud.send('quaff healing potion');
+//   mud.output('🍹 Auto-healed!', 'system');
+// }"
+              required
+            ></textarea>
+            <small class="form-hint">
+              JavaScript code with MUD API access. Scripts run in a sandboxed environment.
+            </small>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="cancel-script-btn" class="btn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Script</button>
+          </div>
+          <p id="script-error" class="error-message"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Timer Modal -->
+    <div id="timer-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Create Timer</h2>
+          <button id="close-timer-modal-btn" class="btn btn-icon">&times;</button>
+        </div>
+        <form id="timer-form">
+          <div class="form-group">
+            <label for="timer-name">Timer Name</label>
+            <input
+              id="timer-name"
+              type="text"
+              placeholder="e.g., Auto-Heal, Combat Buff"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="timer-interval">Interval (seconds)</label>
+            <input
+              id="timer-interval"
+              type="number"
+              min="1"
+              step="1"
+              placeholder="e.g., 30"
+              required
+            />
+            <small class="form-hint">How often to execute (in seconds)</small>
+          </div>
+
+          <div class="form-group">
+            <label for="timer-command">Command to Send</label>
+            <input
+              id="timer-command"
+              type="text"
+              placeholder="e.g., cast heal"
+            />
+            <small class="form-hint">Simple command. Leave empty if using Lua script below.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="timer-script">Lua Script (optional)</label>
+            <textarea
+              id="timer-script"
+              rows="10"
+              placeholder="-- Lua script executed on timer tick
+-- Available API:
+-- world.Send(command)           -- Send command to MUD
+-- world.Note(message)            -- Display message to user
+-- world.GetVariable(name)        -- Get variable value
+-- world.SetVariable(name, value) -- Set variable value
+-- world.GetInfo(type)            -- Get world information
+
+-- Example: Check HP and heal if needed
+-- local hp = tonumber(world.GetVariable('current_hp'))
+-- local max_hp = tonumber(world.GetVariable('max_hp'))
+-- if hp and max_hp and hp < max_hp * 0.5 then
+--   world.Send('cast heal')
+--   world.Note('🍹 Auto-healing triggered!')
+-- end"
+              style="font-family: 'Courier New', monospace; font-size: 13px;"
+            ></textarea>
+            <small class="form-hint">Lua script can use variables set by triggers</small>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="cancel-timer-btn" class="btn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create Timer</button>
+          </div>
+          <p id="timer-error" class="error-message"></p>
+        </form>
+      </div>
+    </div>
+
+    <!-- World Modal -->
+    <div id="world-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Create World</h2>
+          <button id="close-world-modal-btn" class="btn btn-icon">&times;</button>
+        </div>
+        <form id="world-form">
+          <div class="form-group">
+            <label for="world-name">World Name *</label>
+            <input
+              type="text"
+              id="world-name"
+              placeholder="e.g. My Favorite MUD"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="world-host">Host *</label>
+            <input
+              type="text"
+              id="world-host"
+              placeholder="e.g. mud.example.com or 192.168.1.100"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="world-port">Port *</label>
+            <input
+              type="number"
+              id="world-port"
+              placeholder="e.g. 4000"
+              min="1"
+              max="65535"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="world-description">Description</label>
+            <textarea
+              id="world-description"
+              rows="3"
+              placeholder="Optional description for this world"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="world-timeout">Connection Timeout (seconds)</label>
+            <input
+              type="number"
+              id="world-timeout"
+              value="30"
+              min="5"
+              max="300"
+            />
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="world-auto-connect" />
+              <span>Auto-connect on startup</span>
+            </label>
+          </div>
+
+          <div class="form-group checkbox-group">
+            <label>
+              <input type="checkbox" id="world-use-tls" />
+              <span>Use TLS/SSL encryption</span>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="cancel-world-btn" class="btn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create World</button>
+          </div>
+          <p id="world-error" class="error-message"></p>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

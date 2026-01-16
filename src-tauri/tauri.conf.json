@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MACMush",
+  "version": "0.1.0",
+  "identifier": "com.macmush.client",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "MACMush",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "12.0",
+      "dmg": {
+        "appPosition": {
+          "x": 180,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 480,
+          "y": 170
+        },
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    },
+    "copyright": "Copyright © 2025 MACMush Team",
+    "shortDescription": "Modern MUD/MUSH client for macOS",
+    "longDescription": "MACMush is a modern MUD/MUSH client for macOS built with Tauri 2.x, Rust, and JavaScript. Features include full automation support (triggers, aliases, timers, highlights), ANSI/Telnet support, MCCP compression, and real-time session sync."
+  }
+}

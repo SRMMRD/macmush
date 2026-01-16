@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE muclient>
+<!-- Test MUSHclient World File -->
+
+<muclient>
+  <world>
+    <site>mud.example.com</site>
+    <port>4000</port>
+    <name>Test MUD World</name>
+    <player>TestPlayer</player>
+    <password>testpass123</password>
+    <use_mxp>false</use_mxp>
+    <enable_triggers>true</enable_triggers>
+    <enable_aliases>true</enable_aliases>
+    <enable_timers>true</enable_timers>
+    <enable_scripts>false</enable_scripts>
+    <enable_speed_walk>true</enable_speed_walk>
+    <auto_log>false</auto_log>
+  </world>
+  
+  <triggers>
+    <trigger match="You have (\d+) gold" enabled="true" regexp="true" ignore_case="false" group="Gold" sequence="100">
+      <send>say I have gold!</send>
+    </trigger>
+    <trigger match="* arrives" enabled="true" regexp="false" ignore_case="true" group="Movement" sequence="200">
+      <send>wave</send>
+    </trigger>
+    <trigger match="You are hungry" enabled="true" regexp="false" ignore_case="false" sequence="300">
+      <send>eat bread</send>
+    </trigger>
+  </triggers>
+  
+  <aliases>
+    <alias match="^gg$" enabled="true" regexp="true" ignore_case="false" sequence="100">
+      <send>get all from ground</send>
+    </alias>
+    <alias match="^da$" enabled="true" regexp="true" ignore_case="false" sequence="200">
+      <send>drop all</send>
+    </alias>
+    <alias match="^qq$" enabled="true" regexp="true" ignore_case="false" sequence="300">
+      <send>quaff potion</send>
+    </alias>
+  </aliases>
+  
+  <timers>
+    <timer name="Healing Check" enabled="true" interval_seconds="60" active_closed="false">
+      <send>check health</send>
+    </timer>
+    <timer name="Save Character" enabled="true" interval_seconds="300" active_closed="false">
+      <send>save</send>
+    </timer>
+  </timers>
+  
+  <macros>
+    <macro key="F1">north</macro>
+    <macro key="F2">south</macro>
+    <macro key="F3">east</macro>
+    <macro key="F4">west</macro>
+  </macros>
+  
+  <variables>
+    <variable name="gold_count">1000</variable>
+    <variable name="health_percent">100</variable>
+    <variable name="current_room">Town Square</variable>
+  </variables>
+</muclient>
