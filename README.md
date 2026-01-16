@@ -6,12 +6,12 @@ A modern MUD/MUSH client for macOS built with Tauri 2.x, Rust, and JavaScript.
 
 Download the latest release from the [Releases](https://github.com/SRMMRD/macmush/releases) page:
 
-- **MACMush_0.1.0_universal.dmg** - Universal binary for Intel and Apple Silicon Macs
+- **MACMush_0.1.0_x64.dmg** - Intel Mac binary (works on Apple Silicon via Rosetta 2)
 
 ### System Requirements
 
 - macOS 12.0 (Monterey) or later
-- Intel or Apple Silicon Mac
+- Intel Mac (Apple Silicon runs via Rosetta 2)
 - 50MB free disk space
 
 ### Installation
